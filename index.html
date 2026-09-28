@@ -3,15 +3,313 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的靜態網站</title>
-  <link rel="stylesheet" href="style.css">
+  <title>To-Do List</title>
+  <style>
+    /* ===== 基礎排版（投影友好：字大、對比清晰） ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --fg: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --done: #22c55e;
+      --danger: #ef4444;
+      --stroke: #334155;
+    }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      /* 投影 / 手機都適合嘅字體大小 */
+      font-size: 20px;
+      line-height: 1.5;
+      padding: 24px 16px 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    /* ===== 頂部：標題 + 計數 ===== */
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    #counter {
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+
+    /* ===== 輸入區 ===== */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    #new-task {
+      flex: 1;
+      font-size: 1.1rem;
+      padding: 14px 16px;
+      border: 2px solid var(--stroke);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--fg);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    #new-task:focus {
+      border-color: var(--accent);
+    }
+
+    #add-btn {
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 14px 22px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0f172a;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+
+    #add-btn:hover { transform: scale(1.03); }
+    #add-btn:active { opacity: 0.8; }
+
+    /* ===== 工具列 ===== */
+    .tools {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+
+    #clear-done {
+      font-size: 1rem;
+      padding: 10px 16px;
+      border: 2px solid var(--stroke);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    #clear-done:hover { background: rgba(239, 68, 68, 0.12); }
+
+    /* ===== 待辦清單 ===== */
+    #list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #list:empty::after {
+      content: "未有任務，加一個啦！";
+      display: block;
+      text-align: center;
+      color: var(--muted);
+      padding: 30px 0;
+      font-size: 1.05rem;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .item input[type="checkbox"] {
+      width: 26px;
+      height: 26px;
+      flex-shrink: 0;
+      accent-color: var(--done);
+      cursor: pointer;
+    }
+
+    .item .label {
+      flex: 1;
+      font-size: 1.15rem;
+      word-break: break-word;
+      cursor: pointer;
+    }
+
+    .item.done .label {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .item .del {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: background 0.15s ease;
+    }
+
+    .item .del:hover { background: rgba(239, 68, 68, 0.15); }
+
+    /* ===== 手機（細屏） ===== */
+    @media (max-width: 480px) {
+      body { font-size: 18px; padding: 16px 12px 48px; }
+      h1 { font-size: 1.8rem; }
+      .input-row { flex-direction: column; }
+      #add-btn { width: 100%; }
+    }
+  </style>
 </head>
 <body>
-  <main class="container">
-    <h1>Hello, GitHub Pages! 👋</h1>
-    <p id="message">呢個係一個用純 HTML / CSS / JavaScript 整嘅靜態網站。</p>
-    <button id="btn" type="button">撳吓我</button>
+  <main class="app">
+    <header>
+      <h1>📋 To-Do List</h1>
+      <p id="counter">未完成 0／總數 0</p>
+    </header>
+
+    <div class="input-row">
+      <input type="text" id="new-task" placeholder="輸入新任務…" autocomplete="off">
+      <button id="add-btn" type="button">新增</button>
+    </div>
+
+    <div class="tools">
+      <button id="clear-done" type="button">🗑 清除已完成</button>
+    </div>
+
+    <ul id="list"></ul>
   </main>
-  <script src="script.js"></script>
+
+  <script>
+    /* ===== 資料 + localStorage ===== */
+    const STORAGE_KEY = 'openclaw-todo-items';
+
+    // 每項：{ id, text, done }
+    let items = load();
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    /* ===== DOM 參照 ===== */
+    const listEl = document.getElementById('list');
+    const inputEl = document.getElementById('new-task');
+    const addBtn = document.getElementById('add-btn');
+    const clearBtn = document.getElementById('clear-done');
+    const counterEl = document.getElementById('counter');
+
+    /* ===== 渲染 ===== */
+    function render() {
+      listEl.innerHTML = '';
+
+      items.forEach((item) => {
+        const li = document.createElement('li');
+        li.className = 'item' + (item.done ? ' done' : '');
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = item.done;
+        cb.addEventListener('change', () => {
+          item.done = cb.checked;
+          save();
+          render();
+        });
+
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = item.text;
+        label.addEventListener('click', () => {
+          cb.checked = !cb.checked;
+          item.done = cb.checked;
+          save();
+          render();
+        });
+
+        const del = document.createElement('button');
+        del.className = 'del';
+        del.textContent = '✕';
+        del.title = '刪除';
+        del.addEventListener('click', () => {
+          items = items.filter((i) => i.id !== item.id);
+          save();
+          render();
+        });
+
+        li.append(cb, label, del);
+        listEl.appendChild(li);
+      });
+
+      // 更新計數：未完成 X／總數 Y
+      const total = items.length;
+      const undone = items.filter((i) => !i.done).length;
+      counterEl.textContent = `未完成 ${undone}／總數 ${total}`;
+    }
+
+    /* ===== 新增 ===== */
+    function addTask() {
+      const text = inputEl.value.trim();
+      if (!text) {
+        inputEl.focus();
+        return;
+      }
+      items.push({ id: Date.now() + '-' + Math.random().toString(16).slice(2), text, done: false });
+      inputEl.value = '';
+      inputEl.focus();
+      save();
+      render();
+    }
+
+    addBtn.addEventListener('click', addTask);
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTask();
+    });
+
+    /* ===== 清除已完成 ===== */
+    clearBtn.addEventListener('click', () => {
+      items = items.filter((i) => !i.done);
+      save();
+      render();
+    });
+
+    /* ===== 首次渲染 ===== */
+    render();
+  </script>
 </body>
 </html>
