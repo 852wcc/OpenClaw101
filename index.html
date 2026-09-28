@@ -19,6 +19,18 @@
       --stroke: #334155;
     }
 
+    /* ===== 淺藍色主題（body[data-theme="light"] 時生效） ===== */
+    body[data-theme="light"] {
+      --bg: #e0f2fe;
+      --card: #ffffff;
+      --fg: #0f172a;
+      --muted: #475569;
+      --accent: #0284c7;
+      --done: #16a34a;
+      --danger: #dc2626;
+      --stroke: #bae6fd;
+    }
+
     html, body {
       min-height: 100%;
     }
@@ -47,11 +59,33 @@
       margin-bottom: 24px;
     }
 
+    header .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
     h1 {
       font-size: 2.2rem;
       color: var(--accent);
-      margin-bottom: 8px;
     }
+
+    #theme-btn {
+      font-size: 1.1rem;
+      padding: 6px 14px;
+      border: 2px solid var(--stroke);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--fg);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+      white-space: nowrap;
+    }
+
+    #theme-btn:hover { transform: scale(1.05); }
+    #theme-btn:active { opacity: 0.8; }
 
     #counter {
       font-size: 1.2rem;
@@ -190,7 +224,10 @@
 <body>
   <main class="app">
     <header>
-      <h1>📋 To-Do List</h1>
+      <div class="title-row">
+        <h1>📋 To-Do List</h1>
+        <button id="theme-btn" type="button" title="切換主題">🌙 深色</button>
+      </div>
       <p id="counter">未完成 0／總數 0</p>
     </header>
 
@@ -306,6 +343,31 @@
       items = items.filter((i) => !i.done);
       save();
       render();
+    });
+
+    /* ===== 主題切換（深色 ↔ 淺藍色） ===== */
+    const THEME_KEY = 'openclaw-todo-theme';
+    const themeBtn = document.getElementById('theme-btn');
+
+    // 套用主題：light = 淺藍色，暗預設 = 深色
+    function applyTheme(theme) {
+      if (theme === 'light') {
+        document.body.setAttribute('data-theme', 'light');
+        themeBtn.textContent = '☀️ 淺藍';
+        localStorage.setItem(THEME_KEY, 'light');
+      } else {
+        document.body.removeAttribute('data-theme');
+        themeBtn.textContent = '🌙 深色';
+        localStorage.setItem(THEME_KEY, 'dark');
+      }
+    }
+
+    // 初始讀取儲存嘅主題
+    applyTheme(localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark');
+
+    themeBtn.addEventListener('click', () => {
+      const isLight = document.body.getAttribute('data-theme') === 'light';
+      applyTheme(isLight ? 'dark' : 'light');
     });
 
     /* ===== 首次渲染 ===== */
