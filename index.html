@@ -92,6 +92,36 @@
       color: var(--muted);
     }
 
+    /* ===== 進度條 ===== */
+    .progress-wrap {
+      margin: 14px auto 6px;
+      max-width: 480px;
+    }
+
+    .progress-track {
+      height: 14px;
+      background: var(--stroke);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--stroke);
+    }
+
+    #progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--done));
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    #progress-label {
+      display: block;
+      text-align: center;
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
     /* ===== 輸入區 ===== */
     .input-row {
       display: flex;
@@ -150,6 +180,32 @@
     }
 
     #clear-done:hover { background: rgba(239, 68, 68, 0.12); }
+
+    /* ===== 過濾 tab ===== */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .filters button {
+      flex: 1;
+      font-size: 1.05rem;
+      padding: 10px 12px;
+      border: 2px solid var(--stroke);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--fg);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .filters button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0f172a;
+      font-weight: 600;
+    }
 
     /* ===== 待辦清單 ===== */
     #list {
@@ -218,6 +274,7 @@
       h1 { font-size: 1.8rem; }
       .input-row { flex-direction: column; }
       #add-btn { width: 100%; }
+      .filters button { font-size: 0.95rem; padding: 9px 8px; }
     }
   </style>
 </head>
@@ -229,6 +286,10 @@
         <button id="theme-btn" type="button" title="切換主題">🌙 深色</button>
       </div>
       <p id="counter">未完成 0／總數 0</p>
+      <div class="progress-wrap">
+        <div class="progress-track"><div id="progress-fill"></div></div>
+        <span id="progress-label">完成 0%</span>
+      </div>
     </header>
 
     <div class="input-row">
@@ -238,6 +299,12 @@
 
     <div class="tools">
       <button id="clear-done" type="button">🗑 清除已完成</button>
+    </div>
+
+    <div class="filters">
+      <button type="button" data-filter="all" class="active">全部</button>
+      <button type="button" data-filter="active">未完成</button>
+      <button type="button" data-filter="done">已完成</button>
     </div>
 
     <ul id="list"></ul>
@@ -271,12 +338,25 @@
     const addBtn = document.getElementById('add-btn');
     const clearBtn = document.getElementById('clear-done');
     const counterEl = document.getElementById('counter');
+    const progressFill = document.getElementById('progress-fill');
+    const progressLabel = document.getElementById('progress-label');
+    const filterBtns = document.querySelectorAll('.filters button');
+
+    // 目前過濾：all / active / done
+    let filter = 'all';
 
     /* ===== 渲染 ===== */
     function render() {
       listEl.innerHTML = '';
 
-      items.forEach((item) => {
+      // 按目前過濾揀項目
+      const visible = items.filter((item) => {
+        if (filter === 'active') return !item.done;
+        if (filter === 'done') return item.done;
+        return true; // all
+      });
+
+      visible.forEach((item) => {
         const li = document.createElement('li');
         li.className = 'item' + (item.done ? ' done' : '');
 
@@ -313,11 +393,43 @@
         listEl.appendChild(li);
       });
 
+      // Empty state（按過濾顯示唔同訊息）
+      if (visible.length === 0) {
+        const emptyMsg = document.createElement('li');
+        emptyMsg.className = 'item';
+        emptyMsg.style.justifyContent = 'center';
+        emptyMsg.style.color = 'var(--muted)';
+        const msg = items.length === 0 ? '未有任務，加一個啦！'
+          : filter === 'active' ? '冇未完成嘅任務 🎉'
+          : filter === 'done' ? '未完成任何任務' : '冇任務';
+        emptyMsg.textContent = msg;
+        listEl.appendChild(emptyMsg);
+      }
+
       // 更新計數：未完成 X／總數 Y
       const total = items.length;
       const undone = items.filter((i) => !i.done).length;
+      const done = total - undone;
       counterEl.textContent = `未完成 ${undone}／總數 ${total}`;
+
+      // 更新進度條：完成百分比
+      const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+      progressFill.style.width = pct + '%';
+      progressLabel.textContent = `完成 ${pct}%（${done}/${total}）`;
+
+      // 更新過濾 tab 高亮
+      filterBtns.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+      });
     }
+
+    /* ===== 過濾 tab ===== */
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filter = btn.dataset.filter;
+        render();
+      });
+    });
 
     /* ===== 新增 ===== */
     function addTask() {
